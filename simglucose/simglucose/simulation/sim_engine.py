@@ -1,6 +1,7 @@
 import logging
 import time
 import os
+from simglucose.controller.base import Action
 
 pathos = True
 try:
@@ -18,7 +19,7 @@ class SimObj(object):
                  controller,
                  sim_time,
                  animate=True,
-                 path=None):
+                 path=None): 
         self.env = env
         self.controller = controller
         self.sim_time = sim_time
@@ -34,7 +35,8 @@ class SimObj(object):
             if self.animate:
                 self.env.render()
             action = self.controller.policy(obs, reward, done, **info)
-            obs, reward, done, info = self.env.step(action)
+            act = Action(basal=action, bolus=0)
+            obs, reward, done, info = self.env.step(act)
         toc = time.time()
         logger.info('Simulation took {} seconds.'.format(toc - tic))
 

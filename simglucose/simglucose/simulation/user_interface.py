@@ -15,6 +15,9 @@ import os
 from datetime import datetime
 from datetime import timedelta
 import platform
+from stable_baselines3 import SAC
+from simglucose.controller.basal_bolus_ctrller import BBController
+from sac_controller import MyController
 
 logger = logging.getLogger(__name__)
 
@@ -370,8 +373,11 @@ def simulate(sim_time=None,
         return env
 
     envs = [local_build_env(p) for p in patient_names]
+    # ctrllers = [copy.copy(controller) for _ in range(len(envs))]
+    ctrllers = []
+    for i in range(len(envs)):
+        ctrllers.append(MyController(0))
 
-    ctrllers = [copy.deepcopy(controller) for _ in range(len(envs))]
     sim_instances = [
         SimObj(e, c, sim_time, animate=animate, path=save_path)
         for (e, c) in zip(envs, ctrllers)

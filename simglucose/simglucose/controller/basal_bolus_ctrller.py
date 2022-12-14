@@ -5,6 +5,8 @@ import pandas as pd
 import pkg_resources
 import logging
 
+
+
 logger = logging.getLogger(__name__)
 CONTROL_QUEST = pkg_resources.resource_filename('simglucose',
                                                 'params/Quest.csv')
@@ -81,3 +83,5 @@ class BBController(Controller):
 
     def reset(self):
         pass
+
+

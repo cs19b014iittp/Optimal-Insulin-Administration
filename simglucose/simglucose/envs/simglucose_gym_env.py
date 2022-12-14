@@ -19,7 +19,7 @@ class T1DSimEnv(gym.Env):
     '''
     A wrapper of simglucose.simulation.env.T1DSimEnv to support gym API
     '''
-    metadata = {'render.modes': ['human']}
+    metadata = {'render.modes': ['human']} 
 
     SENSOR_HARDWARE = 'Dexcom'
     INSULIN_PUMP_HARDWARE = 'Insulet'
@@ -45,10 +45,16 @@ class T1DSimEnv(gym.Env):
             return self.env.step(act)
         return self.env.step(act, reward_fun=self.reward_fun)
 
+    def step(self, action):
+        return self._step(action)
+
     def _reset(self):
         self.env, _, _, _ = self._create_env_from_random_state()
         obs, _, _, _ = self.env.reset()
         return obs
+
+    def reset(self):
+        return self._reset()
 
     def _seed(self, seed=None):
         self.np_random, seed1 = seeding.np_random(seed=seed)
