@@ -16,17 +16,7 @@ class MyController(Controller):
         self.init_state = init_state
         self.state = init_state
 
-        self.model = SAC.load("sac_insulin")
-        
-
-    def __deepcopy__(self, memo):
-        deepcopy_method = self.__deepcopy__
-        self.__deepcopy__ = None
-        cp = copy.deepcopy(self, memo)
-        self.__deepcopy__ = deepcopy_method
-        cp.__deepcopy__ = deepcopy_method
-
-        return cp
+        self.model = SAC.load("sac_insulin_intBG")
 
     def policy(self, observation, reward, done, **info):
         '''
@@ -62,8 +52,8 @@ class MyController(Controller):
 def learn_sac():
     env = T1DSimEnv()
     model = SAC(MlpPolicy, env, verbose=1)
-    model.learn(total_timesteps=500, log_interval=10)
-    model.save("sac_insulin")
+    model.learn(total_timesteps=10000, log_interval=10)
+    model.save("sac_insulin_intBG")
     return
 
 learn_sac()

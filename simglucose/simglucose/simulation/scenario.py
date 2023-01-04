@@ -19,7 +19,7 @@ class Scenario(object):
 
 
 class CustomScenario(Scenario):
-    def __init__(self, start_time, scenario):
+    def __init__(self, start_time, scenario): 
         '''
         scenario - a list of tuples (time, action), where time is a datetime or
                    timedelta or double, action is a namedtuple defined by

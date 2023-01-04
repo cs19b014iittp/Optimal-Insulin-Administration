@@ -1,3 +1,4 @@
+'''
 from simglucose.simulation.env import T1DSimEnv
 from simglucose.controller.basal_bolus_ctrller import BBController
 from simglucose.sensor.cgm import CGMSensor
@@ -62,3 +63,23 @@ s2.reset()
 s = [s1, s2]
 results = batch_sim(s, parallel=True)
 print(results)
+'''
+import numpy as np
+from simglucose.analysis.risk import risk_index
+
+def risk_diff(BG_last_hour):
+    if len(BG_last_hour) < 2:
+        return 0
+    else:
+        _, _, risk_current = risk_index([BG_last_hour[-1]], 1)
+        _, _, risk_prev = risk_index([BG_last_hour[-2]], 1)
+        return risk_current - risk_prev
+
+def magni_reward(bg_hist, **kwargs):
+    bg = max(1, bg_hist[-1])
+    fBG = 3.5506*(np.log(bg)**.8353-3.7932)
+    risk = 10 * (fBG)**2
+    return -1*risk
+
+for i in range(1,60):
+    print(10*i, risk_index([10*i], 1)[2], -magni_reward([10*i]))

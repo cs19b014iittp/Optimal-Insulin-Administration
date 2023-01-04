@@ -5,6 +5,7 @@ from datetime import timedelta
 import logging
 from collections import namedtuple
 from simglucose.simulation.rendering import Viewer
+import numpy as np
 
 try:
     from rllab.envs.base import Step
@@ -32,6 +33,11 @@ def risk_diff(BG_last_hour):
         _, _, risk_prev = risk_index([BG_last_hour[-2]], 1)
         return risk_prev - risk_current
 
+def magni_reward(bg_hist, **kwargs):
+    bg = max(1, bg_hist[-1])
+    fBG = 3.5506*(np.log(bg)**.8353-3.7932)
+    risk = 10 * (fBG)**2
+    return -1*risk
 
 class T1DSimEnv(object):
     def __init__(self, patient, sensor, pump, scenario):
@@ -47,6 +53,7 @@ class T1DSimEnv(object):
 
     def mini_step(self, action):
         # current action
+        # print(self.time)
         patient_action = self.scenario.get_action(self.time)
         basal = self.pump.basal(action.basal)
         bolus = self.pump.bolus(action.bolus)
@@ -63,7 +70,7 @@ class T1DSimEnv(object):
 
         return CHO, insulin, BG, CGM
 
-    def step(self, action, reward_fun=risk_diff):
+    def step(self, action, reward_fun=magni_reward):
         '''
         action is a namedtuple with keys: basal, bolus
         '''
@@ -79,7 +86,10 @@ class T1DSimEnv(object):
             insulin += tmp_insulin / self.sample_time
             BG += tmp_BG / self.sample_time
             CGM += tmp_CGM / self.sample_time
-
+        
+        BG = int(np.ceil(BG))
+        CGM = int(np.ceil(CGM))
+        
         # Compute risk index
         horizon = 1
         LBGI, HBGI, risk = risk_index([BG], horizon)
@@ -98,10 +108,13 @@ class T1DSimEnv(object):
 
         # Compute reward, and decide whether game is over
         window_size = int(60 / self.sample_time)
-        BG_last_hour = self.CGM_hist[-window_size:]
+        # BG_last_hour = self.CGM_hist[-window_size:]
+        BG_last_hour = self.BG_hist[-window_size:]
         reward = reward_fun(BG_last_hour)
         done = BG < 70 or BG > 350
         obs = Observation(CGM=CGM)
+
+        print(action.basal, BG, CGM, reward)
 
         return Step(observation=obs,
                     reward=reward,

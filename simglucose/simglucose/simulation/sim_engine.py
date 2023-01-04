@@ -26,7 +26,7 @@ class SimObj(object):
         self.animate = animate
         self._ctrller_kwargs = None
         self.path = path
-
+ 
     def simulate(self):
         self.controller.reset()
         obs, reward, done, info = self.env.reset()
@@ -35,8 +35,10 @@ class SimObj(object):
             if self.animate:
                 self.env.render()
             action = self.controller.policy(obs, reward, done, **info)
-            act = Action(basal=action, bolus=0)
-            obs, reward, done, info = self.env.step(act)
+            action = Action(basal=action, bolus=0)
+            obs, reward, done, info = self.env.step(action)
+            # print(action, reward)
+
         toc = time.time()
         logger.info('Simulation took {} seconds.'.format(toc - tic))
 

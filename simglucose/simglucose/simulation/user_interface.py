@@ -374,9 +374,11 @@ def simulate(sim_time=None,
 
     envs = [local_build_env(p) for p in patient_names]
     # ctrllers = [copy.copy(controller) for _ in range(len(envs))]
+
     ctrllers = []
     for i in range(len(envs)):
         ctrllers.append(MyController(0))
+        # ctrllers.append(BBController())
 
     sim_instances = [
         SimObj(e, c, sim_time, animate=animate, path=save_path)
