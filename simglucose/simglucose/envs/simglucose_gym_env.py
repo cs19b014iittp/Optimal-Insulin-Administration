@@ -13,7 +13,7 @@ from datetime import datetime
 
 PATIENT_PARA_FILE = pkg_resources.resource_filename(
     'simglucose', 'params/vpatient_params.csv')
-
+ 
 
 class T1DSimEnv(gym.Env):
     '''
@@ -65,11 +65,12 @@ class T1DSimEnv(gym.Env):
         # Derive a random seed. This gets passed as a uint, but gets
         # checked as an int elsewhere, so we need to keep it below
         # 2**31.
-        seed2 = seeding.hash_seed(self.np_random.randint(0, 1000)) % 2**31
-        seed3 = seeding.hash_seed(seed2 + 1) % 2**31
-        seed4 = seeding.hash_seed(seed3 + 1) % 2**31
+        seed2 = hash(np.random.randint(0, 1000)) % 2**31
+        seed3 = hash(seed2 + 1) % 2**31 
+        seed4 = hash(seed3 + 1) % 2**31
 
-        hour = self.np_random.randint(low=0.0, high=24.0)
+        # hour = self.np_random.randint(low=0.0, high=24.0)
+        hour = np.random.randint(low=0.0, high=24.0)
         start_time = datetime(2018, 1, 1, hour, 0, 0)
         patient = T1DPatient.withName(self.patient_name, random_init_bg=True, seed=seed4)
         sensor = CGMSensor.withName(self.SENSOR_HARDWARE, seed=seed2)
@@ -83,9 +84,14 @@ class T1DSimEnv(gym.Env):
 
     @property
     def action_space(self):
-        ub = self.env.pump._params['max_basal']
+        # ub = self.env.pump._params['max_basal']
+        ub = 2
         return spaces.Box(low=0, high=ub, shape=(1,))
 
     @property
     def observation_space(self):
-        return spaces.Box(low=0, high=np.inf, shape=(1,))
+        return spaces.Box(low=0, high=np.inf, shape=(20,))
+
+    @property
+    def max_episode_steps(self):
+        return 100000

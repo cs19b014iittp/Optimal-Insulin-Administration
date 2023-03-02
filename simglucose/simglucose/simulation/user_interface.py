@@ -57,7 +57,7 @@ def pick_patients():
     elif select1 == 3:
         patients = patient_names[10:20]
     elif select1 == 4:
-        patients = patient_names[20:30]
+        patients = patient_names[20:30]yyyy
     else:
         patients = []
         select_hist = []
