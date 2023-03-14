@@ -66,6 +66,7 @@ print(results)
 '''
 import numpy as np
 from simglucose.analysis.risk import risk_index
+import math
 
 def risk_diff(BG_last_hour):
     if len(BG_last_hour) < 2:
@@ -81,5 +82,25 @@ def magni_reward(bg_hist, **kwargs):
     risk = 10 * (fBG)**2
     return -1*risk
 
-for i in range(1,60):
-    print(10*i, risk_index([10*i], 1)[2], -magni_reward([10*i]))
+def exp_reward(bg_hist):
+    G = bg_hist[-1]
+    Gt = 127
+    eps = 0.1
+    return 10*math.exp(-eps*(abs(Gt - G)))
+
+def risk_diff(BG_last_hour):
+    _, _, risk_current = risk_index([BG_last_hour[-1]], 1)
+    _, _, risk_prev = risk_index([BG_last_hour[-2]], 1)
+
+    diff = risk_prev - risk_current
+    return math.exp(diff)
+
+# for i in range(1,60):
+#     print(10*i, risk_index([10*i], 1)[2], -magni_reward([10*i]), exp_reward([10*i]))
+print(risk_diff([1,1]), risk_diff([1,1]))
+print(risk_diff([1,2]), risk_diff([2,1]))
+print(risk_diff([1,3]), risk_diff([3,1]))
+print(risk_diff([1,4]), risk_diff([4,1]))
+print(risk_diff([1,5]), risk_diff([5,1]))
+
+# 'D:\\IITTP\\Academics\\sem7\BTP\\Optimal-Insulin-Administration\\simglucose\\ae_model2.pt'

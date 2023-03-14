@@ -9,19 +9,23 @@ from main import main
 import numpy as np
 import pickle
 
-# from stable_baselines3.sac.policies import MlpPolicy
-# from stable_baselines3 import SAC, PPO, DDPG
-# from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.sac.policies import MlpPolicy
+from stable_baselines3 import SAC, PPO, DDPG
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 class MyController(Controller):
     def __init__(self, init_state):
         self.init_state = init_state
         self.state = init_state
-        with open('dr14_adol1_10lac.pkl', 'rb') as inp:
+        with open('models/dr40_adol1_2lac.pkl', 'rb') as inp:
             self.model = pickle.load(inp)
+        # self.model = PPO.load("models/ppo61_200000")
+        # self.model = SAC.load("models/sac61_200000")
 
     def policy(self, observation, reward, done, **info):
         action = self.model.act(observation)
+        # action, _states = self.model.predict(np.array(observation, dtype=float))
+        print('action:', action)
         self.state = observation
         return action
 
@@ -46,7 +50,7 @@ def learn_ppo(t):
     env = T1DSimEnv()
     model = PPO("MlpPolicy", env, gamma=0.5, verbose=1, device='cuda')
     model.learn(total_timesteps=t)
-    model.save("ppo15adol3_" + str(t))
+    model.save("ppo50_" + str(t))
     return
 
 def learn_ddpg(t):
@@ -61,9 +65,9 @@ def learn_ddpg(t):
 
 if __name__ == '__main__':
     # learn_sac(200000)
-    # learn_ppo(50000)
+    learn_ppo(20000)
     # learn_ddpg(10000)
-    delayed_rewards()
+    # delayed_rewards()
 
 # '''
 

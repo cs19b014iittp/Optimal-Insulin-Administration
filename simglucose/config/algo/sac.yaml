@@ -4,11 +4,11 @@ algo:
   params:
     obs_dim: 20 # to be specified later
     action_dim: 1 # to be specified later
-    action_range: [0,2] # to be specified later
+    action_range: [0,5] # to be specified later
     device: ${device}
     critic_cfg: ${double_q_critic}
     actor_cfg: ${diag_gaussian_actor}
-    discount: 0.5
+    discount: 0.99
     init_temperature: 0.1
     alpha_lr: 1e-4
     alpha_betas: [0.9, 0.999]
@@ -28,7 +28,7 @@ double_q_critic:
     obs_dim: ${algo.params.obs_dim}
     action_dim: ${algo.params.action_dim}
     hidden_dim: 256
-    hidden_depth: 3
+    hidden_depth: 7
     
 diag_gaussian_actor:
   class: IRCR.algorithm.actor.DiagGaussianActor
@@ -37,5 +37,5 @@ diag_gaussian_actor:
     action_dim: ${algo.params.action_dim}
     action_range: ${algo.params.action_range}
     hidden_dim: 256
-    hidden_depth: 3
+    hidden_depth: 7
     log_std_bounds: [-5, 2]

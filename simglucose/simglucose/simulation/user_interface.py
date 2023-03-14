@@ -11,11 +11,11 @@ import pandas as pd
 import copy
 import pkg_resources
 import logging
-import os
+import os 
 from datetime import datetime
 from datetime import timedelta
 import platform
-from stable_baselines3 import SAC
+# from stable_baselines3 import SAC
 from simglucose.controller.basal_bolus_ctrller import BBController
 from sac_controller import MyController
 
@@ -33,9 +33,10 @@ def pick_patients():
     patient_params = pd.read_csv(PATIENT_PARA_FILE)
     patient_names = list(patient_params['Name'].values)
     while True:
-        select1 = input('Select virtual patients:\n' + '[1] All\n' +
-                        '[2] All Adolescents\n' + '[3] All Adults\n' +
-                        '[4] All Children\n' + '[5] By ID\n' + '>>> ')
+        # select1 = input('Select virtual patients:\n' + '[1] All\n' +
+        #                 '[2] All Adolescents\n' + '[3] All Adults\n' +
+        #                 '[4] All Children\n' + '[5] By ID\n' + '>>> ')
+        select1 = 1
         try:
             select1 = int(select1)
         except ValueError:
@@ -51,13 +52,13 @@ def pick_patients():
             break
 
     if select1 == 1:
-        patients = patient_names
+        patients = patient_names[0:2]
     elif select1 == 2:
         patients = patient_names[:10]
     elif select1 == 3:
         patients = patient_names[10:20]
     elif select1 == 4:
-        patients = patient_names[20:30]yyyy
+        patients = patient_names[20:30]
     else:
         patients = []
         select_hist = []
@@ -101,10 +102,11 @@ def pick_cgm_sensor():
     sensor_names = list(sensor_params['Name'].values)
     total_sensor_num = len(sensor_params.index)
     while True:
-        print('Select the CGM sensor:')
-        for i in range(total_sensor_num):
-            print('[{0}] {1}'.format(i + 1, sensor_names[i]))
-        input_value = input('>>> ')
+        # print('Select the CGM sensor:')
+        # for i in range(total_sensor_num):
+        #     print('[{0}] {1}'.format(i + 1, sensor_names[i]))
+        input_value = 3
+        # input_value = input('>>> ')
         try:
             selection = int(input_value)
         except ValueError:
@@ -125,7 +127,8 @@ def pick_cgm_sensor():
 
 def pick_cgm_seed():
     while True:
-        input_value = input('Select Random Seed for Sensor Noise [None]: ')
+        input_value = 1
+        # input_value = input('Select Random Seed for Sensor Noise [None]: ')
         try:
             seed = int(input_value)
             break
@@ -144,10 +147,11 @@ def pick_insulin_pump():
     pump_params = pd.read_csv(INSULIN_PUMP_PARA_FILE)
     pump_names = list(pump_params['Name'].values)
     while True:
-        print('Select the insulin pump:')
-        for i, pump in enumerate(pump_names):
-            print('[{}] {}'.format(i + 1, pump))
-        input_value = input('>>> ')
+        # print('Select the insulin pump:')
+        # for i, pump in enumerate(pump_names):
+        #     print('[{}] {}'.format(i + 1, pump))
+        input_value = 1
+        # input_value = input('>>> ')
         try:
             selection = int(input_value)
         except ValueError:
@@ -167,10 +171,11 @@ def pick_insulin_pump():
 
 def pick_scenario(start_time=None):
     while True:
-        print('Select scnenario:')
-        print('[1] Random Scnenario')
-        print('[2] Custom Scnenario')
-        input_value = input('>>>')
+        # print('Select scnenario:')
+        # print('[1] Random Scnenario')
+        # print('[2] Custom Scnenario')
+        input_value = 1
+        # input_value = input('>>>')
         try:
             selection = int(input_value)
         except ValueError:
@@ -186,8 +191,8 @@ def pick_scenario(start_time=None):
 
     if selection == 1:
         while True:
-            input_value = input(
-                'Select random seed for random scenario [None]: ')
+            input_value = 1
+            # input_value = input('Select random seed for random scenario [None]: ')
             try:
                 seed = int(input_value)
                 break
@@ -207,8 +212,8 @@ def pick_scenario(start_time=None):
 
 def pick_start_time():
     now = datetime.now()
-    start_hour = timedelta(
-        hours=float(input('Input simulation start time (hr): ')))
+    start_hour = timedelta(hours=float(0))
+    # start_hour = timedelta(hours=float(input('Input simulation start time (hr): ')))
     start_time = datetime.combine(now.date(), datetime.min.time()) + start_hour
     print('Simulation start time is set to {}.'.format(start_time))
     return start_time
@@ -266,7 +271,8 @@ def pick_controller():
 
 
 def pick_save_path():
-    foldername = input('Folder name to save results [default]: ')
+    # foldername = input('Folder name to save results [default]: ')
+    foldername = 'test'
     if foldername == 'default' or foldername == '':
         foldername = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -329,10 +335,13 @@ def simulate(sim_time=None,
     parallel   - switch for parallel computing. True/False.
     '''
     if animate is None:
-        animate = pick_animate()
+        animate = True
+        # animate = False
+        # animate = pick_animate()
 
     if parallel is None:
-        parallel = pick_parallel()
+        parallel = False
+        # parallel = pick_parallel()
 
     if platform.system() == 'Darwin' and (animate and parallel):
         raise ValueError(
@@ -343,8 +352,8 @@ def simulate(sim_time=None,
         save_path = pick_save_path()
 
     if sim_time is None:
-        sim_time = timedelta(
-            hours=float(input('Input simulation time (hr): ')))
+        sim_time = timedelta(hours=float(24))
+        # sim_time = timedelta(hours=float(input('Input simulation time (hr): ')))
 
     if scenario is None:
         scenario = pick_scenario(start_time=start_time)

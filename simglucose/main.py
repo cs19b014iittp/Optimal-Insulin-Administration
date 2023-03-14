@@ -6,7 +6,7 @@ import os
 # sys.path.append('.')
 # sys.path.append(join('GuidanceRewards'))
 
-import os
+import os 
 import random
 import time
 import datetime
@@ -31,6 +31,8 @@ from IRCR.misc.env_wrappers import MuJoCoEnv
 from IRCR.buffers.fifo import FIFOBuffer
 from IRCR.buffers.minheap import MinHeapBuffer
 from simglucose.envs.simglucose_gym_env import T1DSimEnv
+
+from encoder import AE
 
 def setup(cfg):
     # print('seed ', cfg.seed)
@@ -100,7 +102,7 @@ def main(cfg):
                 duration, total_timesteps, len(moving_returns), np.average(moving_returns)))
             sys.stdout.flush()
             eval_marker += 1
-    with open('dr14_adol1_10lac.pkl', 'wb') as outp:
+    with open('dr38_adol1_2lac.pkl', 'wb') as outp:
         pickle.dump(actor_critic, outp, pickle.HIGHEST_PROTOCOL)
     # return actor_critic
 
@@ -118,3 +120,38 @@ if __name__ == "__main__":
 # dr9: action = 0 - 0.2
 # dr10: action = 0-1, hidden_depth=3, lr=3e-2
 # dr14: action = 0-2, done = 50-190, hist = 50 min, 5 min avg
+# dr16: Using auto-encoder for dimensional reduction: 300 to 6
+# dr17: including bbc action, risk_index reward
+# dr19: 0.9 bbc action, done 40-300, 5 50 hist, no encoder, action 0-5
+# dr20: 0.99 bbc action, ...
+# dr21: reward: risk index 30 mins
+# dr22: 0.99 bbc, action 0-1 reward 1 min
+# dr23: 0.999 bbc, action 0-2 reward 1 min
+# dr24: depth 5
+# dr25: depth 7, reward magni, action 0-0.1, no bbc training, discount 0.5
+# dr26: using bbc 0.9, termination penalty 1e5, discount 0.99
+# dr27: no bbc, with scale parameter wb (ppo51, sac51)
+# ppo, sac 52: without scale parameter wb
+# dr28: dr27 with embedding layer 300 - 6
+# ppo, sac 53: with embedding layer
+# sac, ppo 54: negative actions -0.5 - 0.1
+# sac, ppo 55: negativa actions -1 - 0.1
+# sac, ppo 56: exp_reward function
+# sac, ppo 57: exp_reward*10
+# dr30: magni reward, embedding, negative actions -1 to 0.1
+# dr31: exp_reward, -- --- --
+# dr32: exp risk_diff reward, --- --- 
+# dr33: exp risk_diff reward, using bbc 0.9
+# sac, ppo 58: exp risk_diff reward
+# dr34: magni reward, embedding, negative actions -1 to 0.1, using bbc
+# dr35: exp reward, embedding, negative actions -1 to 0.1, using bbc
+
+# using new encoder model having non bb controller data too
+# dr36: magni reward, using bbc
+# dr37: exp reward, using bbc
+# dr38: expo risk diff, using bbc
+# sac, ppo 59: magni reward
+# sac, ppo 60: exp reward
+# sac, ppo 61: expo risk diff
+# dr39: magni reward, depth=2, withuot bbc
+# dr40: magni, depth=2, using bbc

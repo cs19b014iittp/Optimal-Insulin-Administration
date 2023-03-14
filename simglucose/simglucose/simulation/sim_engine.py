@@ -2,6 +2,7 @@ import logging
 import time
 import os
 from simglucose.controller.base import Action
+import pickle
 
 pathos = True
 try:
@@ -31,14 +32,17 @@ class SimObj(object):
         self.controller.reset()
         obs, reward, done, info = self.env.reset()
         tic = time.time()
+        # print(self.env.time, self.sim_time)
         while self.env.time < self.env.scenario.start_time + self.sim_time:
             if self.animate:
                 self.env.render()
             action = self.controller.policy(obs, reward, done, **info)
             action = Action(basal=action, bolus=0)
             obs, reward, done, info = self.env.step(action)
-            # print(action, reward)
+            # print(action, obs, reward)
 
+        # with open('obs_hist2.pkl', 'wb') as outp:
+        #     pickle.dump(self.env.obs_hist, outp, pickle.HIGHEST_PROTOCOL)
         toc = time.time()
         logger.info('Simulation took {} seconds.'.format(toc - tic))
 

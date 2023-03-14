@@ -6,6 +6,14 @@ import logging
 from collections import namedtuple
 from simglucose.simulation.rendering import Viewer
 import numpy as np
+import torch
+from encoder import AE
+import pkg_resources
+import math
+import pickle
+
+PATIENT_PARA_FILE = pkg_resources.resource_filename(
+    'simglucose', 'params/vpatient_params.csv')
 
 try:
     from rllab.envs.base import Step
@@ -21,26 +29,30 @@ except ImportError:
         return _Step(observation, reward, done, kwargs)
 
 
-Observation = namedtuple("Observation", ["CGM", "insulin", "CHO"])
+# Observation = namedtuple("Observation", ["CGM", "insulin", "CHO"])
+Observation = namedtuple('Observation', ['CGM'])
 logger = logging.getLogger(__name__)
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def risk_diff(BG_last_hour):
     # if len(BG_last_hour) < 2:
     #     return 0
     # else:
+    # _, _, risk_current = risk_index(BG_last_hour, 30)
     _, _, risk_current = risk_index([BG_last_hour[-1]], 1)
-    # _, _, risk_prev = risk_index([BG_last_hour[-2]], 1)
+    _, _, risk_prev = risk_index([BG_last_hour[-2]], 1)
+
+    diff = risk_prev - risk_current
+    return math.exp(diff)
     # return risk_prev - risk_current
-    return -1*risk_current
+    # return -100*risk_current
 
 def magni_reward(bg_hist, **kwargs):
-    # if bg_hist[-1] < 130 or bg_hist[-1] > 250:
-    #     return -1000000
     bg = max(1, bg_hist[-1])
     fBG = 3.5506*(np.log(bg)**.8353-3.7932)
     risk = 10 * (fBG)**2
-    return -1000*risk
+    return -1*risk
 
 def custom_reward(bg_hist):
     bg = bg_hist[-1]
@@ -56,6 +68,12 @@ def custom_reward(bg_hist):
         return -1*(m*bg + (h - m*ubg))
     return -1*(-m*bg + (h + m*lbg))
 
+def exp_reward(bg_hist):
+    G = bg_hist[-1]
+    Gt = 127
+    eps = 0.1
+    return 10*math.exp(-eps*(abs(Gt - G)))
+
 class T1DSimEnv(object):
     def __init__(self, patient, sensor, pump, scenario):
         # print('init')
@@ -66,10 +84,13 @@ class T1DSimEnv(object):
         self._reset()
         self.timestamps = 0
         self.lastdone = 0
-        
+        self.obs_hist = []
         # for history
-        self.avg_size=5
-        self.hist_size=50
+        self.avg_size=1
+        self.hist_size=150
+
+        self.autoencoder = torch.load('D:\\IITTP\\Academics\\sem7\BTP\\Optimal-Insulin-Administration\\simglucose\\ae_model3.pt')
+        self.autoencoder.eval()
 
     @property
     def time(self):
@@ -77,13 +98,21 @@ class T1DSimEnv(object):
 
     def mini_step(self, action):
         # current action
-        # print(self.time)
+
         patient_action = self.scenario.get_action(self.time)
         basal = self.pump.basal(action.basal)
         bolus = self.pump.bolus(action.bolus)
         insulin = basal + bolus
+
+        vpatient_params = pd.read_csv(PATIENT_PARA_FILE)
+        bw = vpatient_params.query('Name=="{}"'.format(self.patient.name))['BW'].item()
+        u2ss = vpatient_params.query('Name=="{}"'.format(self.patient.name))['u2ss'].item()
+        ideal_basal = bw * u2ss / 6000.
+        insulin = insulin * 43.2 * ideal_basal
+
         CHO = patient_action.meal
         patient_mdl_act = Action(insulin=insulin, CHO=CHO)
+        # print('cho', patient_mdl_act)
 
         # State update
         self.patient.step(patient_mdl_act)
@@ -105,14 +134,7 @@ class T1DSimEnv(object):
         BG = 0.0
         CGM = 0.0
 
-        # print(self.time)
-        # for _ in range(int(self.sample_time)):
-            # Compute moving average as the sample measurements
         tmp_CHO, tmp_insulin, tmp_BG, tmp_CGM = self.mini_step(action)
-        # CHO += tmp_CHO / self.sample_time
-        # insulin += tmp_insulin / self.sample_time
-        # BG += tmp_BG / self.sample_time
-        # CGM += tmp_CGM / self.sample_time
         CHO = tmp_CHO 
         insulin = tmp_insulin 
         BG = tmp_BG 
@@ -140,40 +162,47 @@ class T1DSimEnv(object):
         BG_last_hour = self.CGM_hist[-window_size:]
         # BG_last_hour = self.BG_hist[-window_size:]
         reward = reward_fun(BG_last_hour)
-        # done = BG < 70 or BG > 350
-        # done = BG < 20 or BG > 340
-        # if self.timestamps < 100000:
-        # done = BG < 140 or BG > 16000
-        # print('Insulin: ', insulin)
-        done = BG < 50 or BG > 190
+        
+        done = BG < 40 or BG > 300 or (self.timestamps > (self.lastdone + 5000))
 
-        # if done == True:
-        #     self.lastdone = self.timestamps
-        #     print('CGM:', CGM)
-        #     print('done', self.timestamps, CGM, reward)
+        if done == True:
+            self.lastdone = self.timestamps
+            reward = reward - 100000
+            
+            # obs_data = []
+            # with open('D:\\IITTP\\Academics\\sem7\BTP\\Optimal-Insulin-Administration\\simglucose\\obs_hist.pt', 'rb') as inp:
+            #     obs_data = pickle.load(inp)
+            #     obs_data.extend(self.obs_hist)
 
-        CGM_last_60min = np.full(self.hist_size, CGM, dtype=np.float32)
-        CGM_last_60min[-min(self.hist_size,len(self.CGM_hist)):] = self.CGM_hist[-self.hist_size:]
-        CGM_last_60min = [sum(CGM_last_60min[n:n+self.avg_size])/self.avg_size for n in range(0,self.hist_size,self.avg_size)]
+            # with open('D:\\IITTP\\Academics\\sem7\BTP\\Optimal-Insulin-Administration\\simglucose\\obs_hist.pt', 'wb') as inp:
+            #     pickle.dump(obs_data, inp, pickle.HIGHEST_PROTOCOL)
 
-        insulin_last_60min = np.full(self.hist_size, 0, dtype=np.float32)
-        insulin_last_60min[-min(self.hist_size,len(self.insulin_hist)):] = self.insulin_hist[-self.hist_size:]
-        insulin_last_60min = [sum(insulin_last_60min[n:n+self.avg_size])/self.avg_size for n in range(0,self.hist_size,self.avg_size)]
+        #     print('done', self.timestamps, BG, CGM, reward)
 
-        cho_last_60min = np.full(self.hist_size, 0)
-        cho_last_60min[-min(self.hist_size,len(self.CHO_hist)):] = self.CHO_hist[-self.hist_size:]
-        cho_last_60min = [sum(cho_last_60min[n:n+self.avg_size])/self.avg_size for n in range(0,self.hist_size,self.avg_size)]
+        CGM_obs = np.full(self.hist_size, CGM, dtype=np.float32)
+        CGM_obs[-min(self.hist_size,len(self.CGM_hist)):] = self.CGM_hist[-self.hist_size:]
+        CGM_obs = [sum(CGM_obs[n:n+self.avg_size]) / self.avg_size for n in range(0,self.hist_size,self.avg_size)]
 
-        # obs = [CGM]
-        # obs = [0]
-        # if CGM < 150 and CGM > 130:
-        #     obs = [1]
+        insulin_obs = np.full(self.hist_size, 0, dtype=np.float32)
+        insulin_obs[-min(self.hist_size,len(self.insulin_hist)):] = self.insulin_hist[-self.hist_size:]
+        insulin_obs = [sum(insulin_obs[n:n+self.avg_size]) / self.avg_size for n in range(0,self.hist_size,self.avg_size)]
+
+        cho_obs = np.full(self.hist_size, 0)
+        cho_obs[-min(self.hist_size,len(self.CHO_hist)):] = self.CHO_hist[-self.hist_size:]
+        cho_obs = [sum(cho_obs[n:n+self.avg_size]) / self.avg_size for n in range(0,self.hist_size,self.avg_size)]
+
         # obs = Observation(CGM=CGM)
-        obs = []
-        obs.extend(CGM_last_60min)
-        obs.extend(insulin_last_60min)
-        # obs.append(cho_last_60min)
+        obsh = []
+        obsh.extend(CGM_obs)
+        obsh.extend(insulin_obs)
 
+        if self.timestamps % 5 == 0:
+            self.obs_hist.append(obsh)
+
+        obs, dec_obs = self.autoencoder(torch.FloatTensor(obsh).to(device))
+        obs = obs.to(torch.device('cpu')).tolist()
+
+        # obs = obsh
         # print(CGM, BG, insulin, reward)
 
         return Step(observation=obs,
@@ -205,6 +234,7 @@ class T1DSimEnv(object):
         self.HBGI_hist = [HBGI]
         self.CHO_hist = []
         self.insulin_hist = []
+        self.obs_hist = []
 
     def reset(self):
         print('timesteps= ', self.timestamps)
@@ -214,13 +244,16 @@ class T1DSimEnv(object):
         self.scenario.reset()
         self._reset()
         CGM = self.sensor.measure(self.patient)
-        # obs = Observation(CGM=np.full(5,CGM), insulin=np.full(5,0), CHO=np.full(5,0))  # assmued initial insulin and cho as 0
-        # obs = [CGM]
-        obs = []
+        # obs = Observation(CGM=CGM)
+        obsh = []
         hlen = int(self.hist_size / self.avg_size)
-        obs.extend(np.full(hlen, CGM))
-        obs.extend(np.full(hlen,0))
-        # obs.append(np.full(40,0))
+        obsh.extend(np.full(hlen, CGM))
+        obsh.extend(np.full(hlen,0))
+
+        obs, dec_obs = self.autoencoder(torch.FloatTensor(obsh).to(device))
+        obs = obs.to(torch.device('cpu')).tolist()
+        # obs = obsh
+        
         return Step(observation=obs,
                     reward=0,
                     done=False,

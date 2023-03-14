@@ -11,6 +11,7 @@ from gym import spaces
 from gym.utils import seeding
 from datetime import datetime
 
+
 PATIENT_PARA_FILE = pkg_resources.resource_filename(
     'simglucose', 'params/vpatient_params.csv')
  
@@ -85,12 +86,12 @@ class T1DSimEnv(gym.Env):
     @property
     def action_space(self):
         # ub = self.env.pump._params['max_basal']
-        ub = 2
-        return spaces.Box(low=0, high=ub, shape=(1,))
+        ub = 0.1
+        return spaces.Box(low=-1, high=ub, shape=(1,))
 
     @property
     def observation_space(self):
-        return spaces.Box(low=0, high=np.inf, shape=(20,))
+        return spaces.Box(low=0, high=np.inf, shape=(6,))
 
     @property
     def max_episode_steps(self):

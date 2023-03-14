@@ -17,7 +17,7 @@ PATIENT_PARA_FILE = pkg_resources.resource_filename(
 
 class T1DPatient(Patient):
     SAMPLE_TIME = 1  # min
-    EAT_RATE = 5  # g/min CHO
+    EAT_RATE = 5  # g/min CHO 
 
     def __init__(self,
                  params,
