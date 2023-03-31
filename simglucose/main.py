@@ -102,7 +102,7 @@ def main(cfg):
                 duration, total_timesteps, len(moving_returns), np.average(moving_returns)))
             sys.stdout.flush()
             eval_marker += 1
-    with open('dr38_adol1_2lac.pkl', 'wb') as outp:
+    with open('dr43_adol1_2lac.pkl', 'wb') as outp:
         pickle.dump(actor_critic, outp, pickle.HIGHEST_PROTOCOL)
     # return actor_critic
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 # dr34: magni reward, embedding, negative actions -1 to 0.1, using bbc
 # dr35: exp reward, embedding, negative actions -1 to 0.1, using bbc
 
-# using new encoder model having non bb controller data too
+# using new encoder model having non bb controller data too (also corrected risk_diff function)
 # dr36: magni reward, using bbc
 # dr37: exp reward, using bbc
 # dr38: expo risk diff, using bbc
@@ -155,3 +155,8 @@ if __name__ == "__main__":
 # sac, ppo 61: expo risk diff
 # dr39: magni reward, depth=2, withuot bbc
 # dr40: magni, depth=2, using bbc
+# dr41: exp reward, depth=2, using bbc
+# dr42: exp risk diff, depth=2, using bbc
+# dr43: magni, depth=2, using bbc, action space= -1 to 0.5
+# sac62: done 40 - 250, action -1 to 0.1
+

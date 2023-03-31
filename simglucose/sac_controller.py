@@ -17,10 +17,10 @@ class MyController(Controller):
     def __init__(self, init_state):
         self.init_state = init_state
         self.state = init_state
-        with open('models/dr40_adol1_2lac.pkl', 'rb') as inp:
+        with open('models/dr40_adol3_2lac.pkl', 'rb') as inp:
             self.model = pickle.load(inp)
         # self.model = PPO.load("models/ppo61_200000")
-        # self.model = SAC.load("models/sac61_200000")
+        # self.model = SAC.load("models/sac61_c1_200000")
 
     def policy(self, observation, reward, done, **info):
         action = self.model.act(observation)
@@ -32,8 +32,8 @@ class MyController(Controller):
     def reset(self):
         self.state = self.init_state
 
+  
 '''
-
 def delayed_rewards():
     with open('dr0.pkl', 'wb') as outp:
         actor_critic = main()

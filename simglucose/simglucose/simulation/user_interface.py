@@ -52,7 +52,7 @@ def pick_patients():
             break
 
     if select1 == 1:
-        patients = patient_names[0:2]
+        patients = patient_names[2:4]
     elif select1 == 2:
         patients = patient_names[:10]
     elif select1 == 3:
@@ -121,6 +121,7 @@ def pick_cgm_sensor():
         else:
             break
     sensor = sensor_names[selection - 1]
+    print('sensor', sensor)
     logger.info('Selected sensor:\n{}'.format(sensor))
     return sensor
 
